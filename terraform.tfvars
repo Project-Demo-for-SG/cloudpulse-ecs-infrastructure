@@ -9,7 +9,7 @@ private_subnet_1_cidr = "10.0.3.0/24"
 private_subnet_2_cidr = "10.0.4.0/24"
 
 # Replace with an address monitored by the project owner.
-budget_alert_email = "krishteja354@gmail.com"
+budget_alert_email                = "krishteja354@gmail.com"
 enable_cloudpulse_budget          = false
 monthly_budget_limit_usd          = 35
 budget_alert_threshold_percent    = 80
@@ -23,12 +23,12 @@ ecs_service_role_name     = "ecs-service-role"
 task_execution_policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 ecs_service_policy_arn    = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
 
-alb_name                = "ecs-app-alb"
-alb_internal            = false
-alb_security_group_name = "ecs-alb-sg"
-ecs_security_group_name = "ecs-tasks-sg"
-alb_ingress_cidr_blocks = ["0.0.0.0/0"]
-alb_listener_port       = 80
+alb_name                   = "ecs-app-alb"
+alb_internal               = false
+alb_security_group_name    = "ecs-alb-sg"
+ecs_security_group_name    = "ecs-tasks-sg"
+alb_ingress_cidr_blocks    = ["0.0.0.0/0"]
+alb_listener_port          = 80
 frontend_target_group_name = "ecs-frontend-tg"
 backend_target_group_name  = "ecs-backend-tg"
 backend_path_pattern       = "/api*"
