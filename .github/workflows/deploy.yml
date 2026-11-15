@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - terraform
   workflow_dispatch:
 
 permissions:
@@ -51,3 +50,55 @@ jobs:
 
       - name: Verify AWS caller identity
         run: aws sts get-caller-identity
+
+  apply:
+    name: Apply Terraform
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main')
+    needs: [validate, oidc-test]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: terraform-state
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "0"
+      WORKSPACE: ci-${{ github.event.repository.name }}-${{ github.ref_name }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          role-session-name: GitHubActions-${{ github.run_id }}
+
+      - name: Initialize Terraform
+        run: terraform init -input=false -lockfile=readonly
+
+      - name: Select Terraform workspace
+        shell: bash
+        run: |
+          workspace="$(printf '%s' "$WORKSPACE" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9_-]+/-/g; s/^-+|-+$//g')"
+          if [[ -z "$workspace" ]]; then
+            echo "Workspace name is empty after sanitizing the repository and branch names." >&2
+            exit 1
+          fi
+          echo "Workspace is ${workspace}"
+          terraform workspace select "$workspace" || terraform workspace new "$workspace"
+          echo "TF_WORKSPACE=${workspace}" >> "$GITHUB_ENV"
+
+      - name: Create Terraform plan
+        run: terraform plan -input=false -no-color -out=t.plan
+
+      - name: Apply Terraform plan
+        run: terraform apply -input=false -no-color t.plan
