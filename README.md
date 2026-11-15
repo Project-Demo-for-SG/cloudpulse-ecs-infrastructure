@@ -50,10 +50,19 @@ Before deploying, configure:
 1. An AWS account and region, plus an IAM role trusted for GitHub Actions OIDC. The role needs permissions for the managed infrastructure and access to the Terraform state bucket.
 2. The GitHub Actions repository secret `AWS_ROLE_ARN`, containing that role's ARN.
 3. The pre-created S3 bucket named in the `backend "s3"` block in [`providers.tf`](providers.tf). Consider enabling bucket versioning and restricting access to the CI role; Terraform configures encryption and lockfiles but does not create or configure the bucket.
-4. ECR images for **both** services, tagged with the configured `frontend_service.image_tag` and `backend_service.image_tag` values. The defaults are `frontend-latest` and `backend-latest`.
+4. The companion app repository's deployment workflow for publishing images after the first apply (see the handoff below).
 5. If enabling the optional budget, the `BUDGET_ALERT_EMAIL` GitHub secret and an activated AWS cost-allocation tag matching the `Project` tag. Budget creation is disabled by default.
 
-> **Image pipeline boundary:** The current GitHub Actions workflow does not build, scan in CI, or push application images. It only provisions infrastructure. Build and push both images to the Terraform-created ECR repository before the ECS services can start successfully. ECR image scanning on push is enabled by default.
+> **Image pipeline boundary:** This workflow provisions infrastructure only; the app repository builds and pushes images after ECR is created. ECR image scanning on push is enabled by default.
+
+### App deployment handoff
+
+The [CloudPulse app repository](https://github.com/Project-Demo-for-SG/cloudpulse-ecs-app/blob/main/README.md) builds and pushes the frontend and backend images.
+
+1. Push infrastructure changes to `main` to create the ECR repository and ECS services; manual dispatch does not apply Terraform. On first setup, tasks cannot become healthy until the app images are pushed.
+2. In the app repository, configure `AWS_ROLE_ARN` and `AWS_ACCOUNT_ID`; the OIDC role needs permission to push to ECR. Run its `Deploy Application` workflow to publish `frontend-latest` and `backend-latest`.
+3. Keep the app workflow's hardcoded `cloudpulse-app-repo` and `us-east-1` aligned with Terraform. The interface is frontend port 80 (`/`) and backend port 3000 (`/api/health`), with `/api*` routed to the backend.
+4. Image pushes do not redeploy running ECS tasks. For later releases, force a new ECS deployment or use versioned image tags and update the task definitions.
 
 The Terraform backend uses `us-east-1`; the AWS provider defaults to `us-east-1` as well. If changing regions, update the backend configuration and workflow AWS region consistently. Terraform workspaces are derived from the repository and branch names; CI creates a workspace such as `ci-<repository>-main`.
 
