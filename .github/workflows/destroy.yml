@@ -20,6 +20,7 @@ jobs:
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "0"
+      TF_VAR_budget_alert_email: ${{ secrets.BUDGET_ALERT_EMAIL }}
       WORKSPACE: ci-${{ github.event.repository.name }}-${{ github.ref_name }}
     steps:
       - name: Check out repository
