@@ -1,0 +1,8 @@
+*.swp
+*.bak
+.terraform/
+*.tfstate*
+*.tfplan
+*.tfvars
+*.tfvars.json
+*.plan
