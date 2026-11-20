@@ -1,3 +1,4 @@
+# Run a demo pipeline to validate and deploy Terraform infrastructure using GitHub Actions. This workflow is triggered on pull requests and pushes to the main branch, excluding changes to markdown files, documentation, and the architecture diagram. It includes jobs for validating Terraform configuration, testing AWS OIDC connection, and applying Terraform changes.
 name: Terraform Infrastructure
 
 on:
